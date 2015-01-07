@@ -111,7 +111,11 @@ func mail(result Result, conf Config) error {
 
 func main() {
 
-	printMode := os.Args[1]
+	printMode := "text"
+
+	if len(os.Args) > 1 {
+		printMode = os.Args[1]
+	}
 
 	//conf, err := conf()
 	//if err != nil {
