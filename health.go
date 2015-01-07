@@ -1,31 +1,13 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"html/template"
-	"io/ioutil"
 	"log"
-	"net/smtp"
 	"os"
 	"os/exec"
 	"strings"
 )
-
-type Config struct {
-	Recipients []string `json:"recipients"`
-	Sender     string   `json:"sender"`
-	Smtp       Smtp     `json:"smtp"`
-}
-
-type Smtp struct {
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-	User     string `json:"user"`
-	Password string `json:"password"`
-}
 
 type Result struct {
 	Hostname string
@@ -47,68 +29,6 @@ func cmd(cmd string, args ...string) ([]byte, error) {
 	return response, err
 }
 
-func conf() (Config, error) {
-	if _, err := os.Stat("config.json"); err != nil {
-		if os.IsNotExist(err) {
-			return Config{}, err
-		}
-	}
-
-	config, err := ioutil.ReadFile("config.json")
-	if err != nil {
-		return Config{}, err
-	}
-
-	conf := Config{}
-	err = json.Unmarshal([]byte(config), &conf)
-	if err != nil {
-		return Config{}, err
-	}
-	return conf, err
-}
-
-func mail(result Result, conf Config) error {
-	tpl, err := template.ParseFiles("template.html")
-	if err != nil {
-		return err
-	}
-
-	var body bytes.Buffer
-	err = tpl.ExecuteTemplate(&body, "template.html", result)
-	if err != nil {
-		return err
-	}
-
-	header := make(map[string]string)
-	header["From"] = conf.Sender
-	header["Subject"] = "Server Status Report"
-	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = "text/html; charset=\"utf-8\""
-	header["Content-Transfer-Encoding"] = "base64"
-
-	message := ""
-	for k, v := range header {
-		message += fmt.Sprintf("%s: %s\r\n", k, v)
-	}
-	message += "\r\n" + base64.StdEncoding.EncodeToString(body.Bytes())
-
-	auth := smtp.PlainAuth(
-		"",
-		conf.Smtp.User,
-		conf.Smtp.Password,
-		conf.Smtp.Host,
-	)
-
-	err = smtp.SendMail(
-		conf.Smtp.Host+":"+conf.Smtp.Port,
-		auth,
-		conf.Sender,
-		conf.Recipients,
-		[]byte(message),
-	)
-	return err
-}
-
 func main() {
 
 	printMode := "text"
@@ -116,11 +36,6 @@ func main() {
 	if len(os.Args) > 1 {
 		printMode = os.Args[1]
 	}
-
-	//conf, err := conf()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
 
 	result := Result{}
 	hostname, err := os.Hostname()
@@ -141,10 +56,6 @@ func main() {
 	memory, _ := cmd("free", "-mo")
 	result.Memory = string(memory)
 
-	//err = mail(result, conf)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
 	if printMode == "json" {
 		b, err := json.MarshalIndent(result, "", "	")
 		if err != nil {
