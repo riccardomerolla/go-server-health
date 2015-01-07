@@ -1,0 +1,10 @@
+{
+    "recipients": ["user1@email.com","user2@email.com"],
+    "sender": "my@server.com",
+    "smtp": {
+        "host": "smtp.server.com",
+        "port": "587",
+        "user": "myuser",
+        "password": "mypassword"
+    }
+}
