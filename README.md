@@ -16,4 +16,6 @@ go run health.go
 go get app
 cd /gopath/bin/
 ./app
+
+./app json
 ```
